@@ -1,18 +1,18 @@
 # Estudio de OSM
 
-Planificación y Operación de Redes.
+PlanificaciÃ³n y OperaciÃ³n de Redes.
 
-Máster Universitario en Ingeniería de Telecomunicación.
+MÃ¡ster Universitario en IngenierÃ­a de TelecomunicaciÃ³n.
 
 Universidad de Sevilla.
 
 ## Tema
 
-Estudio de la virtualización de funciones de red usando el gestor y orquestador de [OSM](https://osm.etsi.org/).
+Estudio de la virtualizaciÃ³n de funciones de red usando el gestor y orquestador de [OSM](https://osm.etsi.org/).
 
 ## Autores
 
-**Francisco Javier  Ortiz Bonilla** - [Pogorelich](https://github.com/pogorelich)
-**Francisco José Díaz Romero**
-**Alberto Fuentes Muñoz**
-**Ismael Mártinez Saldaña**
+* **Francisco Javier  Ortiz Bonilla** - [Pogorelich](https://github.com/pogorelich)
+* **Francisco JosÃ© DÃ­az Romero**
+* **Alberto Fuentes MuÃ±oz**
+* **Ismael MÃ¡rtinez SaldaÃ±a**
