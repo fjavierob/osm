@@ -1,0 +1,134 @@
+﻿Pruebas sobre el ejemplo ping pong
+-----------------------------------
+1) Probar como se cambia la configuración de la imagen de una VDU.
+   - Añado al .tar.gz la carpeta cloud-init con el fichero cloud-config.txt (copiado de hackfest3) 
+   - Añado al .yaml de ping lo siguiente, dentro del apartado vdu:
+     cloud-init-file: cloud-config.txt
+   - Se crea el .tar.gz de ping con los cambios
+
+2) No ha funcionado 1) porque creo que hay que añadir los charms (el fichero cloud-config.txt usa una 
+   acción definida en los charms). Pruebo a añadir la carpeta charms. Hay que añadir más cosas en el .yaml
+   - Añado el apartado vnf-configuration entero, dentro del apartado vnfd.
+
+
+
+
+---------------------- · ----------------------
+
+# Ejemplo pingpong
+https://osm.etsi.org/wikipub/index.php/VIM_emulator
+
+# Paso 1: Instalar OSM y VIM (hecho).
+          Poner la variable de entorno VIMEMU_HOSTNAME bien con la siguiente IP
+docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' vim-emu
+
+# Paso 2: Linkear OSM con vim-emu.
+          Conectar OSM con el VIM emulado
+osm vim-create --name emu-vimpingpong --user huliovim --password 1234 --auth_url http://$VIMEMU_HOSTNAME:6001/v2.0 --tenant tenantName --account_type openstack
+		  Al ejecutar el comando ha devuelto el siguiente uuid: 258261b0-b535-427b-93e2-8b36e4b245dc
+		  Vemos la lista de vims
+osm vim-list
+
+# Paso 3: Clonamos el repositorio donde está el ejemplo pingpong.
+git clone https://osm.etsi.org/gerrit/osm/vim-emu.git
+		  Y se nos ha creado la carpeta 'vim-emu' con todas las cozitas
+		  Creamos las VNFs
+osm vnfd-create vim-emu/examples/vnfs/ping.tar.gz
+osm vnfd-create vim-emu/examples/vnfs/pong.tar.gz
+osm vnfd-list
+          Creamos el NSD (Network Service Descriptor). El chisme este lo que hace es conectar las VNF usando links virtuales (VLs)
+          Ver https://osm.etsi.org/wikipub/index.php/Release_0_Data_Model_Details#Network_Service_Descriptor.28NSD.29 
+osm nsd-create vim-emu/examples/services/pingpong_nsd.tar.gz
+osm nsd-list
+
+# Paso 4: Instanciamos el servicio pingpong.
+osm ns-create --nsd_name pingpong --ns_name test --vim_account emu-vimpingpong
+
+# Paso 5: Comprobamos la instancia usando el cliente OSM
+osm ns-list
+
+# Paso 6: Interactuamos con las VNF.
+          Accedemos al contenedor donde está corriendo la VNF ping
+sudo docker exec -it mn.dc1_test.ping.1.ubuntu /bin/bash
+		  Probamos los siguientes comandos para ver que funciona bien
+ifconfig
+ping 192.168.100.4  # La IP de pong
+	      Nos salimos de este container y accedemos al container de pong
+exit
+ifconfig
+ping 192.168.100.3  # La IP de ping.
+		  Nos salimos del container
+exit
+
+# Paso 7: Eliminamos el servicio (Mejor ver el paso 8 antes de eliminar)
+osm ns-delete test
+
+# Paso 8: Vemos el estado del emulador VIM.
+     	  Vemos los logs del emulador VIM
+sudo docker logs -f vim-emu
+		  Miramos si el emulador está corriendo en el container
+sudo docker exec vim-emu vim-emu datacenter list
+		  Miramos qué servicios está ejecutando el VIM: aquí vemos las VNF que están ejecutándose.
+		  (Si hemos eliminado en el paso 7 el pingpong, no lo vamos a ver)
+sudo docker exec vim-emu vim-emu compute list
+
+-----
+# Ver los docker que existen in the machine
+docker container list
+# Ver los docker que están running
+docker ps -a 
+# Ver imágenes
+docker images
+
+-----
+Ver https://osm.etsi.org/wikipub/index.php/Release_0_Data_Model_Details
+Examinando el yaml de la VNF ping (ping_vnfd.yaml):
+1. Se define un vnfd (VNF Descriptor)
+   1.1. Se definen parámetros típicos: name, description, version...
+   1.2. Se definen los connection-point. Los connection-point son los puntos por donde se conectan las VNF a los link virtuales.
+        Luego se asociarán a las interfaces que definamos.
+   1.3. Se define la mgmt-interface. Es uno de los connection-point anteriores.   
+   1.4. Se define un VDU (Virtual Deployment Unit). Una VDU es como el contenedor/VM donde va a estar la VNF. Tendrá que tener un SO.
+        1.4.1. Se definen parámetros típicos: id, name, description, ¿count? 
+        1.4.2. Se define vm-flavour: La RAM, disco, CPU que va a tener.
+        1.4.3. Se indica la imagen que va a tener. Creo que será una de las que aparecen listadas con el comando 'docker images'
+        1.4.4. Se definen las interfaces. Cada interfaz está asociada a un connection-point de los que se definieron antes.
+               Antes, cuando entramos al container de la VNF ping, haciendo ifconfig veíamos las siguientes interfaces:
+                 - eth0:    172.17.0.2
+                 - lo:      127.0.0.1
+                 - ping0-0: 192.168.100.3
+               Y en el container de la VNF pong, las siguientes:
+                 - eth0:    172.17.0.3
+                 - lo:      127.0.0.1
+                 - pong0-0: 192.168.100.4
+               Pero no sé cómo se relacionan con las interfaces del yaml. ¿De dónde salen las IP? ¿Y los nombres por qué no son los del yaml?
+El yaml de pong casi igual, cambiando 'ping' por 'pong'.
+
+Examinando el yaml del NSD (pingpong_nsd.yaml):
+1. Se define un nsd.
+   1.1. Se definen parámetros típicos: name, description, version...
+   1.2. Se indican las VNF que son parte del NSD (constituent-vnfd): ping y pong.
+   1.3. Se define un vld (Virtual Link Descriptor): El link virtual que une las VNF ping y pong.
+        1.3.1. Se definen parámetros típicos: id, name, description, type...
+               ¿Por qué mgmt-network true? Los cp que conecta son los designados como mgmt-interface de ping y pong (los cp0).
+        1.3.2. Se definen los connection-point de las VNF a los que conecta el link virtual: un cp de ping y otro de pong.
+
+¿De dónde salen las IP hulio? ¿Y por qué una interfaz es eth0 y otra ping0-0 / pong0-0?
+-----
+
+Links de info:
+--------------
+https://docs.openstack.org/tacker/latest/contributor/vnfd_template_description.html 
+https://github.com/nfvlabs/openmano/wiki/openmano-descriptors
+https://docs.openstack.org/tacker/ocata/devref/vnfd_template_description.html
+
+https://openbaton.github.io/documentation/vnf-package/
+
+YAML de un firewall: https://github.com/sonata-nfv/son-schema/blob/master/function-descriptor/examples/firewall-vnfd.yml
+
+----------
+Ejemplo cirros:
+________________
+
+osm vim-create --name emu-vimcirros --user huliocirros --password 1234 --auth_url http://$VIMEMU_HOSTNAME:6001/v2.0 --tenant tenantName --account_type openstack
+osm ns-create --nsd_name cirros_2vnf_ns --ns_name prueba_cirros --vim_account emu-vimcirros

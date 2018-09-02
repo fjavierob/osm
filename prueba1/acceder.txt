@@ -1,0 +1,5 @@
+sudo docker exec -it mn.dc1_prueba1.ping.1.ubuntu /bin/bash
+sudo docker exec -it mn.dc1_prueba1.pang.2.ubuntu /bin/bash
+sudo docker exec -it mn.dc1_prueba1.peng.3.ubuntu /bin/bash
+sudo docker exec -it mn.dc1_prueba1.pong.4.ubuntu /bin/bash
+sudo docker exec -it mn.dc1_prueba1.pung.5.ubuntu /bin/bash

@@ -1,0 +1,58 @@
+-----
+NOTA: se cambió 'oruga' por 'solea'
+-----
+
+puerto para entrar a las Maq Virtuales: puerto 22022 (ssh) 22080 (http)
+
+Para el cliente http, usuario: admin, pass: admin  (http://)
+
+Se quiere la lista de comandos ejecutada para todo el proceso completo.
+
+IMPORTANTE!!!!
+No apagar nunca la máquina, siempre reboot
+
+ssh -p 22022 usuario @solea.us.es
+Password: 1234
+
+Comprobar que funciona el cliente OSM y todos los servicios del mimso
+  ->osm (lista de cosas que se peuden hacer) -> Servicio activo
+  ->Componentes del osm: docker service ls (aparecen las replicas instanciadas de cada servicio 1/1 activos)
+
+Comprobar que tenemos activos el VIM (Gestor de Maquinas virtuales):
+
+  -> docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' vim-emu)
+  -> docker run --name vim-emu -t -d --rm --privileged --pid='host' --network=netOSM -v /var/run/docker.sock:/var/run/docker.sock vim-emu-img python examples/osm_default_daemon_topology_2_pop.py
+  -> Volvemos a comprobar ocn docker inspect (Tiene que devolver una Ip).
+
+Variables de entorno a poner en el bash: 
+  -> export OSM  NAME=127.0.0.1
+  -> ... OSM SOL005=true
+  ->... VIMEMU HOSTNAME= direccion que nos de el VIM!!
+
+  vi ./bashrc
+
+
+
+
+
+docker run --name vim-emu -t -d --rm --privileged --pid='host' --network=netOSM -v /var/run/docker.sock:/var/run/docker.sock vim-emu-img python examples/osm_default_daemon_topology_2_pop.py
+
+osm vim-create --name emu-vimpingpong --user hulio --password man --auth_url http://$VIMEMU_HOSTNAME:6001/v2.0 --tenant tenantName --account_type openstack
+
+--------
+sudo apt update
+        sudo apt install dnsmasq -y
+        sudo bash -c 'cat << EOF > /etc/dnsmasq.conf
+        strict-order
+        interface=eth0
+        no-dhcp-interface=eth0
+        EOF'
+    owner: root:root
+    permissions: '0774'
+    path: /tmp/configure_dns
+
+runcmd:
+ - /tmp/configure_dns
+
+
+
