@@ -12,7 +12,7 @@ Estudio de la virtualización de funciones de red usando el gestor y orquestador
 
 ## Autores
 
-* **Francisco Javier  Ortiz Bonilla** - [Pogorelich](https://github.com/pogorelich)
+* **Francisco Javier  Ortiz Bonilla** - [fjavierob](https://github.com/fjavierob)
 * **Francisco José Díaz Romero**
 * **Alberto Fuentes Muñoz**
 * **Ismael Mártinez Saldaña**
